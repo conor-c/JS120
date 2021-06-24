@@ -26,12 +26,12 @@ const RPSGame = {
     let choice;
     while (true) {
       promptUser(`Would you like the rules? Enter 'yes' or 'no'.`);
-      choice = readline.question();
-      if (['yes', 'no'].includes(choice)) break;
+      choice = readline.prompt().toLowerCase();
+      if (['y', 'n', 'yes', 'no'].includes(choice)) break;
       informUser(`Error. "${choice}" is not a valid input.`);
     }
 
-    if (choice === 'yes') {
+    if (choice === 'yes' || choice === 'y') {
       for (let winSequence in winningMoves) {
         informUser(`${winSequence} beats ${winningMoves[winSequence].join(' and ')}.`);
       }
@@ -45,7 +45,7 @@ const RPSGame = {
       return 'human';
     } else if (winningMoves[computerMove].includes(humanMove)) {
       this.computer.incrementScore();
-      this.computer.favorableMoves.push(computerMove);
+      this.computer.favorableMoves.push(computerMove); // increases likely hood of picking previously won moves
       return 'computer';
     }
 
@@ -53,8 +53,8 @@ const RPSGame = {
   },
 
   updateMoveHistory() {
-    let humanMove = this.human.move;
-    let computerMove = this.computer.move;
+    let humanMove = this.human.getMove();
+    let computerMove = this.computer.getMove();
 
     this.moveHistory.push({
       human: humanMove,
@@ -64,12 +64,13 @@ const RPSGame = {
   },
 
   displayMatchResult() {
-    let matchResult = this.moveHistory[this.moveHistory.length - 1].winner;
+    let currentMatch = this.moveHistory[this.moveHistory.length - 1];
+    let matchResult = currentMatch.winner;
     let humanScore = this.human.getScore();
     let computerScore = this.computer.getScore();
 
-    informUser(`You chose: ${this.human.move}`);
-    informUser(`The computer chose: ${this.computer.move}`);
+    informUser(`You chose: ${currentMatch.human}`);
+    informUser(`The computer chose: ${currentMatch.computer}`);
 
     if (matchResult === 'human') {
       informUser('You Win!');
@@ -105,12 +106,12 @@ const RPSGame = {
     let repeat;
     while (true) {
       promptUser('Would you like to play again? Enter ("yes" or "no")');
-      repeat = readline.prompt();
-      if (['yes', 'no'].includes(repeat)) break;
+      repeat = readline.prompt().toLowerCase();
+      if (['y', 'n', 'yes', 'no'].includes(repeat)) break;
       informUser(`Error. "${repeat}" is not a valid input.`);
     }
 
-    return repeat === 'yes';
+    return repeat === 'yes' || repeat === 'y';
   },
 
   play() {
@@ -121,13 +122,12 @@ const RPSGame = {
       this.computer.choose();
       this.updateMoveHistory();
       this.displayMatchResult();
-      // console.log(this.moveHistory);
-      // console.log(this.computer);
 
       if (this.checkForRoundWinner()) {
         this.human.resetScore();
         this.computer.resetScore();
         if (!this.playAgain()) break;
+        console.clear();
       }
     }
 
@@ -153,6 +153,10 @@ function createPlayer() {
   return {
     move: null,
     score: 0,
+
+    getMove() {
+      return this.move;
+    },
 
     getScore() {
       return this.score;
@@ -191,10 +195,11 @@ function createHuman() {
       let choice;
       let possibleMoves = Object.keys(winningMoves);
       let lastMove = possibleMoves[possibleMoves.length - 1];
-
+      // doesn't allow abbreviated game moves as user options in order to allow
+      // easy addition of game combos
       while (true) {
         promptUser(`Please choose either: ${possibleMoves.slice(0, -1).join(', ')}, or ${lastMove}.`);
-        choice = readline.question();
+        choice = readline.question().toLowerCase();
         if (possibleMoves.includes(choice)) break;
         informUser(`Error. "${choice}" is not a valid input.`);
       }
