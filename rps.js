@@ -1,135 +1,170 @@
 const readline = require('readline-sync');
-const winningMoves = {
-  scissors: ['paper', 'lizard'],
-  paper: ['rock', 'spock'],
+const winningMoves = { // To add more moves, add move that wins as key, and moves that lose as value
   rock: ['lizard', 'scissors'],
+  paper: ['rock', 'spock'],
+  scissors: ['paper', 'lizard'],
   lizard: ['spock', 'paper'],
   spock: ['scissors', 'rock'],
 };
+
 const RPSGame = {
   human: createHuman(),
   computer: createComputer(),
+  matchesNeededToWin: 5,
+  moveHistory: [],
+  gameName: getGameName(),
 
-  displayWelcomeMessage() {
-    console.log('Welcome to RPSLS, first to 5 match wins, wins the round!');
+  displayWelcome() {
+    informUser(`Welcome to ${this.gameName}.`);
   },
 
-  displayGoodbyeMessage() {
-    console.log('Thanks for playing RPSLS. Goodbye!');
+  displayGoodbye() {
+    informUser(`Thanks for playing ${this.gameName}!`);
   },
 
-  calculateMatchWinner() {
-    let humanMove = this.human.move;
-    this.human.moveHistory[humanMove] += 1;
-    let computerMove = this.computer.move;
-    this.computer.moveHistory[computerMove] += 1;
+  informRules() {
+    let choice;
+    while (true) {
+      promptUser(`Would you like the rules? Enter 'yes' or 'no'.`);
+      choice = readline.question();
+      if (['yes', 'no'].includes(choice)) break;
+      informUser(`Error. "${choice}" is not a valid input.`);
+    }
 
+    if (choice === 'yes') {
+      for (let winSequence in winningMoves) {
+        informUser(`${winSequence} beats ${winningMoves[winSequence].join(' and ')}.`);
+      }
+      informUser(`** First player to ${this.matchesNeededToWin} Match wins, wins the Round! **`);
+    }
+  },
+
+  calculateMatchWinner(humanMove, computerMove) {
     if (winningMoves[humanMove].includes(computerMove)) {
-      this.human.score += 1;
+      this.human.incrementScore();
       return 'human';
     } else if (winningMoves[computerMove].includes(humanMove)) {
-      this.computer.score += 1;
+      this.computer.incrementScore();
+      this.computer.favorableMoves.push(computerMove);
       return 'computer';
     }
 
     return 'tie';
   },
 
-  displayMatchWinner() {
-    let winner = this.calculateMatchWinner();
+  updateMoveHistory() {
+    let humanMove = this.human.move;
+    let computerMove = this.computer.move;
 
-    console.log(`You chose: ${this.human.move}`);
-    console.log(`The computer chose: ${this.computer.move}`);
-
-    switch (winner) {
-      case 'human':
-        console.log('You Win!');
-        console.log(`The score is You: ${this.human.score}, Computer: ${this.computer.score}`);
-        break;
-      case 'computer':
-        console.log('Computer Wins!');
-        console.log(`The score is You: ${this.human.score}, Computer: ${this.computer.score}`);
-        break;
-      default:
-        console.log("It's a tie.");
-        console.log(`The score is You: ${this.human.score}, Computer: ${this.computer.score}`);
-        break;
-    }
+    this.moveHistory.push({
+      human: humanMove,
+      computer: computerMove,
+      winner: this.calculateMatchWinner(humanMove, computerMove),
+    });
   },
 
-  calculateRoundWinner() {
-    const MATCHES_NEEDED = 5;
-    if (this.human.score === MATCHES_NEEDED) {
-      return 'human';
-    } else if (this.computer.score === MATCHES_NEEDED) {
-      return 'computer';
+  displayMatchResult() {
+    let matchResult = this.moveHistory[this.moveHistory.length - 1].winner;
+    let humanScore = this.human.getScore();
+    let computerScore = this.computer.getScore();
+
+    informUser(`You chose: ${this.human.move}`);
+    informUser(`The computer chose: ${this.computer.move}`);
+
+    if (matchResult === 'human') {
+      informUser('You Win!');
+    } else if (matchResult === 'computer') {
+      informUser('Computer Wins!');
+    } else {
+      informUser("It's a tie.");
+    }
+
+    informUser(`The score is You: ${humanScore}, Computer: ${computerScore}`);
+  },
+
+  checkForRoundWinner() {
+    if (this.human.getScore() === this.matchesNeededToWin) {
+      this.displayRoundWinner('human');
+      return true;
+    } else if (this.computer.getScore() === this.matchesNeededToWin) {
+      this.displayRoundWinner('computer');
+      return true;
     }
     return false;
   },
 
-  displayRoundWinner() {
-    let winner = this.calculateRoundWinner();
-
-    switch (winner) {
-      case 'human':
-        console.log('You have won the Round!');
-        return this.resetScore();
-      case 'computer':
-        console.log('The computer has won the Round.');
-        return this.resetScore();
-      default:
-        break;
+  displayRoundWinner(winner) {
+    if (winner === 'human') {
+      informUser('You have won the Round!');
+    } else {
+      informUser('The computer has won the Round.');
     }
-
-    return false;
-  },
-
-  resetScore() {
-    this.human.score = 0;
-    this.computer.score = 0;
-    return true;
   },
 
   playAgain() {
     let repeat;
     while (true) {
-      console.log('Would you like to play again? Enter ("yes" or "no")');
+      promptUser('Would you like to play again? Enter ("yes" or "no")');
       repeat = readline.prompt();
       if (['yes', 'no'].includes(repeat)) break;
-      console.log('Please enter "yes" or "no".');
+      informUser(`Error. "${repeat}" is not a valid input.`);
     }
 
     return repeat === 'yes';
   },
 
   play() {
-    this.displayWelcomeMessage();
+    this.displayWelcome();
+    this.informRules();
     while (true) {
       this.human.choose();
       this.computer.choose();
-      this.displayMatchWinner();
-      console.log(this.computer);
-      console.log(this.human);
-      if (this.displayRoundWinner() && !this.playAgain()) break;
+      this.updateMoveHistory();
+      this.displayMatchResult();
+      // console.log(this.moveHistory);
+      // console.log(this.computer);
+
+      if (this.checkForRoundWinner()) {
+        this.human.resetScore();
+        this.computer.resetScore();
+        if (!this.playAgain()) break;
+      }
     }
 
-    this.displayGoodbyeMessage();
+    this.displayGoodbye();
   },
 };
 
 RPSGame.play();
 
+function getGameName() {
+  return Object.keys(winningMoves).map(move => move[0].toUpperCase()).join('');
+}
+
+function promptUser(string) {
+  console.log(`=> ${string}`);
+}
+
+function informUser(string) {
+  console.log(`|| ${string} ||`);
+}
+
 function createPlayer() {
   return {
     move: null,
     score: 0,
-    moveHistory: {
-      rock: 0,
-      paper: 0,
-      scissors: 0,
-      lizard: 0,
-      spock: 0,
-    }
+
+    getScore() {
+      return this.score;
+    },
+
+    incrementScore() {
+      this.score += 1;
+    },
+
+    resetScore() {
+      this.score = 0;
+    },
   };
 }
 
@@ -137,10 +172,11 @@ function createComputer() {
   let playerObject = createPlayer();
 
   let computerObject = {
+    favorableMoves: Object.keys(winningMoves),
+
     choose() {
-      const choices = ['rock', 'paper', 'scissors', 'lizard', 'spock'];
-      let randomIndex = Math.floor(Math.random() * choices.length);
-      this.move = choices[randomIndex];
+      let randomIndex = Math.floor(Math.random() * this.favorableMoves.length);
+      this.move = this.favorableMoves[randomIndex];
     },
   };
 
@@ -153,12 +189,14 @@ function createHuman() {
   let humanObject = {
     choose() {
       let choice;
+      let possibleMoves = Object.keys(winningMoves);
+      let lastMove = possibleMoves[possibleMoves.length - 1];
 
       while (true) {
-        console.log('Please choose rock, paper, scissors, lizard, or spock:');
+        promptUser(`Please choose either: ${possibleMoves.slice(0, -1).join(', ')}, or ${lastMove}.`);
         choice = readline.question();
-        if (Object.keys(winningMoves).includes(choice)) break;
-        console.log('Sorry, choice is invalid.');
+        if (possibleMoves.includes(choice)) break;
+        informUser(`Error. "${choice}" is not a valid input.`);
       }
 
       this.move = choice;
@@ -167,19 +205,3 @@ function createHuman() {
 
   return Object.assign(playerObject, humanObject);
 }
-
-// function createMove() {
-//   return {
-//     // state: type of move (rock, paper, scissors)
-//   }
-// }
-
-// function createRule() {
-//   return {
-//     // state? do rules need a state?
-//   }
-// }
-
-// let compare = function(move1, move2) {
-//   // compares moves
-// }
