@@ -1,27 +1,19 @@
-// let obj = {
-//   a: 't',
-//   b: function() {
-//     console.log(this);
-//   }
-// }
-// obj.b.call(global)
+let carPrototype = {
+  start: function() {
+    this.started = true;
+  },
 
-let logResult = function(func) {
-  let result = func();
-  console.log(result);
-  return result;
+  stop: function() {
+    this.started = false;
+  },
+
+  init(make, model, year) {
+    this.make = make;
+    this.model = model;
+    this.year = year;
+  },
 };
 
-let foo = function() {
-  let self = this;
-  let sue = {
-    name: 'Sue Perkins',
-    age: 37,
-    myAge() {
-      return `${self.name} is ${self.age} years old`;
-    },
-  };
-  logResult(sue.myAge);
-};
+let car1 = Object.create(carPrototype).init('toyota', 'corrolla', 2016);
 
-foo()
+console.log(car1)
