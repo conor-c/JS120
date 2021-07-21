@@ -1,27 +1,44 @@
-// let obj = {
-//   a: 't',
-//   b: function() {
-//     console.log(this);
+// Use a factory function to create pet objects. The factory function should let us use pets like this:
+
+// function createPet(animal, name) {
+//   return {
+//     animal: animal,
+//     name: name,
+
+//     sleep: function() {
+//       console.log('I am sleeping');
+//     },
+
+//     wake: function() {
+//       console.log('I am awake');
+//     },
 //   }
 // }
-// obj.b.call(global)
 
-let logResult = function(func) {
-  let result = func();
-  console.log(result);
-  return result;
-};
+let PetPrototype = {
+  init(animal, name) {
+    this.animal = animal;
+    this.name = name;
+    return this;
+  },
 
-let foo = function() {
-  let self = this;
-  let sue = {
-    name: 'Sue Perkins',
-    age: 37,
-    myAge() {
-      return `${self.name} is ${self.age} years old`;
-    },
-  };
-  logResult(sue.myAge);
-};
+  sleep: function() {
+    console.log('I am sleeping');
+  },
 
-foo()
+  wake: function() {
+    console.log('I am awake');
+  },
+
+}
+
+let pudding = Object.create(PetPrototype).init("Cat", "Pudding");
+console.log(`I am a ${pudding.animal}. My name is ${pudding.name}.`);
+pudding.sleep(); // I am sleeping
+pudding.wake();  // I am awake
+console.log(pudding.constructor.name)
+
+let neptune = Object.create(PetPrototype).init("Fish", "Neptune");
+console.log(`I am a ${neptune.animal}. My name is ${neptune.name}.`);
+neptune.sleep(); // I am sleeping
+neptune.wake();  // I am awake
