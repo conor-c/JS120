@@ -191,24 +191,42 @@ class TTTGame {
   }
 
   play() {
-    // orchestrate the game play
-    // SPIKE
     this.displayWelcomeMessage();
     this.board.display();
 
     while (true) {
-      this.humanMoves();
-      if (this.gameOver()) break;
+      while (true) {
+        this.humanMoves();
+        if (this.gameOver()) break;
+  
+        this.computerMoves();
+        if (this.gameOver()) break;
+        
+        this.board.displayAndClear();
+      }
+  
+      this.board.displayAndClear();
+      this.displayResults();
 
-      this.computerMoves();
-      if (this.gameOver()) break;
-      
+      if (!this.playAgain()) break;
+
+      this.board = new Board();
       this.board.displayAndClear();
     }
 
-    this.board.displayAndClear();
-    this.displayResults();
     this.displayGoodbyeMessage();
+  }
+
+  playAgain() {
+    let choice;
+
+    while (true) {
+      choice = readline.question('Play again? (y/n): ');
+      if (['y', 'n'].includes(choice.toLowerCase())) break;
+
+      console.log("Sorry that's not a valid choice.");
+    }
+    return choice === 'y';
   }
 }
 
