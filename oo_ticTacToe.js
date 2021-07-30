@@ -3,7 +3,7 @@ let readline = require('readline-sync');
 class Square {
   static UNUSED_SQUARE = ' ';
   static HUMAN_MARKER = 'X';
-  static COMPUTER_Marker = 'O';
+  static COMPUTER_MARKER = 'O';
 
   constructor(marker = Square.UNUSED_SQUARE) {
     this.marker = marker;
@@ -49,6 +49,15 @@ class Board {
   unusedSquares() {
     let keys = Object.keys(this.squares);
     return keys.filter(key => this.squares[key].isUnused());
+  }
+
+  joinOr(movesAvailable, separatorPunctuation = ', ', separatorWord = 'or') {
+    if (movesAvailable.length <= 2) { //.join will return single entries without the separator
+      return movesAvailable.join(` ${separatorWord} `);
+    } else if (movesAvailable.length > 2) {
+      let lastEntry = movesAvailable.pop();
+      return movesAvailable.join(separatorPunctuation) + separatorPunctuation + separatorWord + ' ' + lastEntry;
+    }
   }
 
   isFull() {
@@ -97,7 +106,7 @@ class Human extends Player {
 
 class Computer extends Player {
   constructor() {
-    super(Square.COMPUTER_Marker);
+    super(Square.COMPUTER_MARKER);
   }
 }
 
@@ -124,7 +133,7 @@ class TTTGame {
 
     while (true) {
       let validChoices = this.board.unusedSquares();
-      const prompt = `Choose a square (${validChoices.join(', ')}): `;
+      const prompt = `Choose a square (${this.board.joinOr(validChoices)}): `;
       choice = readline.question(prompt);
 
       if (validChoices.includes(choice)) break;
@@ -140,10 +149,10 @@ class TTTGame {
     let choice;
     let validChoices = this.board.unusedSquares();
 
-    while (true) { //Consider refactor to a do-while loop, for clarity
+    do {
       choice = Math.floor((9 * Math.random()) + 1).toString();
-      if (validChoices.includes(choice)) break;
-    }
+    } while (!validChoices.includes(choice));
+
     this.board.markSquareAt(choice, this.computer.getMarker());
   }
 
