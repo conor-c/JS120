@@ -48,15 +48,19 @@ class Board {
 
   unusedSquares() {
     let keys = Object.keys(this.squares);
-    return keys.filter(key => this.squares[key].isUnused());
+    return keys.filter(key => this.isUnusedSquare(key));
+  }
+
+  isUnusedSquare(key) {
+    return this.squares[key].isUnused();
   }
 
   joinOr(movesAvailable, separatorPunctuation = ', ', separatorWord = 'or') {
     if (movesAvailable.length <= 2) { //.join will return single entries without the separator
       return movesAvailable.join(` ${separatorWord} `);
     } else if (movesAvailable.length > 2) {
-      let lastEntry = movesAvailable.pop();
-      return movesAvailable.join(separatorPunctuation) + separatorPunctuation + separatorWord + ' ' + lastEntry;
+      let lastEntry = movesAvailable[movesAvailable.length - 1];
+      return movesAvailable.slice(0, -1).join(separatorPunctuation) + separatorPunctuation + separatorWord + ' ' + lastEntry;
     }
   }
 
@@ -91,10 +95,19 @@ class Board {
 class Player {
   constructor(marker) {
     this.marker = marker;
+    this.score = 0;
   }
 
   getMarker() {
     return this.marker;
+  }
+
+  increaseScore() {
+    this.score = this.score += 1;
+  }
+
+  getScore() {
+    return this.score;
   }
 }
 
@@ -128,6 +141,8 @@ class TTTGame {
     ['3', '5', '7'],
   ];
 
+  static GAMES_TO_WIN_MATCH = 3;
+
   humanMoves() {
     let choice;
 
@@ -146,14 +161,59 @@ class TTTGame {
   }
 
   computerMoves() {
-    let choice;
-    let validChoices = this.board.unusedSquares();
+    let choice = this.computerOffenseMove();
 
-    do {
-      choice = Math.floor((9 * Math.random()) + 1).toString();
-    } while (!validChoices.includes(choice));
+    if (!choice) {
+      choice = this.computerDefenseMove();
+    }
+
+    if (!choice) {
+      choice = this.findCenterSquare();
+    }
+
+    if (!choice) {
+      choice = this.findRandomSquare();
+    }
 
     this.board.markSquareAt(choice, this.computer.getMarker());
+  }
+
+  findCenterSquare() {
+    return this.board.isUnusedSquare('5') ? '5' : null;
+  }
+
+  findRandomSquare() {
+    let validChoices = this.board.unusedSquares();
+    let randomChoice;
+
+    do {
+      randomChoice = Math.floor((9 * Math.random()) + 1).toString();
+    } while (!validChoices.includes(randomChoice)); 
+
+    return randomChoice;
+  }
+
+  findOptimalMoveFor(player) {
+    let threatSquares = TTTGame.POSSIBLE_WINNING_ROWS.reduce((emptySquares, row) => {
+      if (this.board.countMarkersFor(player, row) === 2) {
+        let unmarkedSquare = row.find(square => this.board.isUnusedSquare(square));
+        if (unmarkedSquare) {
+          emptySquares.push(unmarkedSquare);
+        }
+      }
+      return emptySquares;
+    }, []);
+
+    return threatSquares.length > 0 ? threatSquares[0] : null;
+  }
+
+  computerDefenseMove() {
+    return this.findOptimalMoveFor(this.human);
+  }
+
+
+  computerOffenseMove() {
+    return this.findOptimalMoveFor(this.computer)
   }
 
   displayWelcomeMessage() {
@@ -163,17 +223,26 @@ class TTTGame {
   }
 
   displayGoodbyeMessage() {
-    console.log('Thanks for playing Tic Tac Toe! Goodbye!');
+    console.log(`Thanks for playing Tic Tac Toe! Goodbye!`);
   }
 
   displayResults() {
     if (this.isWinner(this.human)) {
-      console.log("You won! Congratulations!");
+      console.log("You won this game! Congratulations!");
     } else if (this.isWinner(this.computer)) {
-      console.log("Ha! I've won! Take that silly Human!");
+      console.log("Ha! I've won this game! Take that silly Human!");
     } else {
       console.log("A tie game. *sighs*");
     }
+  }
+
+  reportScore() {
+    console.log('**********************************');
+    console.log(`Games needed to win the match: ${TTTGame.GAMES_TO_WIN_MATCH}`);
+    console.log(`The score is:`);
+    console.log(`You: ${this.human.getScore()}`);
+    console.log(`Computer: ${this.computer.getScore()}`);
+    console.log('**********************************');
   }
 
   isWinner(player) {
@@ -186,8 +255,28 @@ class TTTGame {
     return this.board.isFull() || this.someoneWon();
   }
 
+  matchOver() {
+    return this.human.getScore() === TTTGame.GAMES_TO_WIN_MATCH || this.computer.getScore() === TTTGame.GAMES_TO_WIN_MATCH;
+  }
+
+  winningMessage() {
+    if (this.human.getScore() === TTTGame.GAMES_TO_WIN_MATCH) {
+      console.log("Congratulations! You've won the match!")
+    } else if (this.computer.getScore() === TTTGame.GAMES_TO_WIN_MATCH) {
+      console.log(`Better luck next time. But I've won the match with my ${this.computer.getScore()} game victories!`)
+    }
+  }
+
   someoneWon() {
     return this.isWinner(this.human) || this.isWinner(this.computer);
+  }
+
+  increaseScore() {
+    if (this.isWinner(this.human)) {
+      this.human.increaseScore();
+    } else if (this.isWinner(this.computer)) {
+      this.computer.increaseScore();
+    }
   }
 
   play() {
@@ -197,23 +286,31 @@ class TTTGame {
     while (true) {
       while (true) {
         this.humanMoves();
+        this.reportScore();//test
         if (this.gameOver()) break;
-  
+
         this.computerMoves();
+        this.reportScore();//test
         if (this.gameOver()) break;
         
         this.board.displayAndClear();
+
+        // this.board.display();
       }
   
       this.board.displayAndClear();
       this.displayResults();
+      this.increaseScore();
+      this.reportScore();
 
+      if (this.matchOver()) break;
       if (!this.playAgain()) break;
 
       this.board = new Board();
       this.board.displayAndClear();
     }
 
+    this.winningMessage();
     this.displayGoodbyeMessage();
   }
 
