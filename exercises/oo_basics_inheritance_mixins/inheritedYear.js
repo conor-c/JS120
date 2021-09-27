@@ -1,21 +1,21 @@
-// Using the following code, create two classes - Truck and Car - that both inherit from Vehicle.
-
 class Vehicle {
   constructor(year) {
     this.year = year;
   }
 }
 
-class Car extends Vehicle {
-
-}
-
 class Truck extends Vehicle {
-
+  constructor(year, bedType) {
+    super(year);
+    this.bedType = bedType;
+  }
 }
 
-let truck = new Truck(2003);
-console.log(truck.year); // 2003
+class Car extends Vehicle {
+}
 
+let truck = new Truck(2003, "Short");
+console.log(truck.year);
+console.log(truck.bedType)
 let car = new Car(2015);
-console.log(car.year); // 2015
+console.log(car.year)

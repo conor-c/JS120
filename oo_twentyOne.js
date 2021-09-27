@@ -237,12 +237,16 @@ class TwentyOneGame {
 
     }
 
-    // this.displayGoodbyeMessage();
+    this.displayGoodbyeMessage();
   }
 
   displayWelcomeMessage() {
     console.log('Welcome to Twenty-One');
     console.log(`Your starting balance is $${Player.INITIAL_BUY_IN}`);
+  }
+
+  displayGoodbyeMessage() {
+    console.log("Thanks for playing Twenty-One! Goodbye!");
   }
 
   playAgain() {
